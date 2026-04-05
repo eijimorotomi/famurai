@@ -23,6 +23,10 @@ wordpress/wp-content/uploads/
 # Docker 設定（PHP ini は公開しない）
 config/uploads.ini
 
+# Claude Code ローカル設定
+.claude/
+.agents/
+
 # OS / エディタ
 .DS_Store
 Thumbs.db
