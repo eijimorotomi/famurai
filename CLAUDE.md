@@ -62,6 +62,14 @@ docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root rewr
 docker exec -it devkinsta_fpm bash
 ```
 
+### デプロイ（GitHub → ステージング）
+
+```bash
+# ローカルで編集 → push → ステージングに反映
+git add <ファイル> && git commit -m "..." && git push
+ssh famurai@140.83.62.102 -p 61241 "bash /www/famurai_375/deploy.sh"
+```
+
 ### リモート（Kinsta ステージング）
 
 ```bash
