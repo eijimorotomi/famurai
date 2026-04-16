@@ -13,9 +13,9 @@
 ## プロジェクト概要
 
 - **サイト名**: Famurai（ファムライ）— 架空の音楽機材・オーディオ輸入代理店
-- **目的**: クライアント（完実電気・銀座十字屋）向け提案用デモサイト
+- **目的**: クライアント向け提案用デモサイト
 - **ローカルURL**: http://famurai.local
-- **管理画面**: http://famurai.local/wp-admin（admin / admin1234）
+- **管理画面**: http://famurai.local/wp-admin
 - **データベースマネージャー**: DevKinsta → 「データベースマネージャー」ボタン
 - **リモート（Kinsta）**: DevKinsta → 「同期 → Staging にプッシュ」
 

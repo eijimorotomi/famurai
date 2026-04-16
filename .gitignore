@@ -18,6 +18,7 @@ wordpress/wp-content/mu-plugins/kinsta-mu-plugins/
 wordpress/wp-config.php
 .env
 .env.*
+docker-compose.yml
 
 # アップロード
 wordpress/wp-content/uploads/
