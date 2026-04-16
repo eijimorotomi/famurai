@@ -7,10 +7,12 @@ wordpress/*
 wordpress/wp-content/*
 !wordpress/wp-content/themes/
 !wordpress/wp-content/plugins/
+!wordpress/wp-content/mu-plugins/
 wordpress/wp-content/themes/*
 !wordpress/wp-content/themes/famurai-child/
 wordpress/wp-content/plugins/*
 !wordpress/wp-content/plugins/famurai-*/
+wordpress/wp-content/mu-plugins/kinsta-mu-plugins/
 
 # 機密ファイル
 wordpress/wp-config.php
@@ -31,3 +33,11 @@ config/uploads.ini
 .DS_Store
 Thumbs.db
 *.swp
+
+# スクリーンショット・一時ファイル
+screenshot-*.png
+*.tmp_test*
+logo-gen.html
+logo-render.html
+.playwright-mcp/
+.tmp_test*

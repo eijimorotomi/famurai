@@ -6,7 +6,6 @@
 > パス: ~/Documents/Obsidian Vault/projects/famurai-demo/tasks.md
 >
 > - 「作業中」のタスクがあればそこから着手する
-> - 「グローバル設定（初回のみ）」が未完了であれば最優先で実行する
 > - タスク完了時は tasks.md のチェックボックスを更新する
 
 ---
@@ -15,71 +14,138 @@
 
 - **サイト名**: Famurai（ファムライ）— 架空の音楽機材・オーディオ輸入代理店
 - **目的**: クライアント（完実電気・銀座十字屋）向け提案用デモサイト
-- **サイトURL**: http://localhost:8080
-- **管理画面**: http://localhost:8080/wp-admin（admin / admin1234）
-- **phpMyAdmin**: http://localhost:8081
+- **ローカルURL**: http://famurai.local
+- **管理画面**: http://famurai.local/wp-admin（admin / admin1234）
+- **データベースマネージャー**: DevKinsta → 「データベースマネージャー」ボタン
+- **リモート（Kinsta）**: DevKinsta → 「同期 → Staging にプッシュ」
 
 ---
 
 ## 開発環境
 
-### 構成
+### 構成（DevKinsta）
 
-| サービス | コンテナ名 | イメージ |
-|---------|----------|--------|
-| WordPress（Apache） | famurai_wp | wordpress:php8.2-apache |
-| データベース（MySQL） | famurai_db | mysql:8.0 |
-| WP-CLI | famurai_wpcli | wordpress:cli-php8.2 |
-| phpMyAdmin | famurai_phpmyadmin | phpmyadmin:latest |
+| 役割 | 詳細 |
+|------|------|
+| ローカル環境 | DevKinsta |
+| サイトファイル | `~/DevKinsta/public/famurai/` |
+| wp-content | `~/DevKinsta/public/famurai/wp-content/` |
+| コンテナ | devkinsta_fpm / devkinsta_db / devkinsta_nginx |
+| Kinsta デプロイ | DevKinsta → 同期 → Staging にプッシュ |
 
-### 起動・停止
+> ⚠️ 旧 Docker 環境（famurai-demo）は**使用停止**。
+> `~/Projects/famurai-demo/` は Git 管理用として残すが、開発作業は DevKinsta で行う。
+
+---
+
+## WP-CLI の使い方
+
+### ローカル（DevKinsta）
 
 ```bash
-# 起動（-d: バックグラウンド実行）
-docker-compose up -d
+# 書式
+docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root <コマンド>
 
-# 停止
-docker-compose down
+# キャッシュクリア
+docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root cache flush
 
-# ログ確認
-docker-compose logs -f wp
+# プラグイン確認
+docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root plugin list --status=active
+
+# テーマ確認
+docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root theme list --status=active
+
+# パーマリンク再生成
+docker exec devkinsta_fpm wp --path=/www/kinsta/public/famurai --allow-root rewrite flush
+
+# コンテナに入る
+docker exec -it devkinsta_fpm bash
 ```
 
-### WP-CLI の使い方
+### リモート（Kinsta ステージング）
 
 ```bash
-# 書式: docker-compose run --rm --entrypoint=wp wpcli <コマンド>
-docker-compose run --rm --entrypoint=wp wpcli plugin list
-docker-compose run --rm --entrypoint=wp wpcli cache flush
-docker-compose run --rm --entrypoint=wp wpcli theme list
+# 接続情報
+# Host: 140.83.62.102  Port: 61241  User: famurai
+# WP パス: /www/famurai_375/public
+# URL: http://stg-famurai-staging.kinsta.cloud
+
+# WP-CLI 書式
+ssh famurai@140.83.62.102 -p 61241 "wp --path=/www/famurai_375/public <コマンド>"
+
+# キャッシュクリア
+ssh famurai@140.83.62.102 -p 61241 "wp --path=/www/famurai_375/public cache flush"
+
+# WP-CLI スクリプト実行
+scp -P 61241 setup-script.php famurai@140.83.62.102:/www/famurai_375/public/
+ssh famurai@140.83.62.102 -p 61241 "wp --path=/www/famurai_375/public eval-file /www/famurai_375/public/setup-script.php && rm /www/famurai_375/public/setup-script.php"
+```
+
+### ファイル転送（ローカル → ステージング）
+
+> ローカルで編集後、scp で特定ファイルのみステージングに転送する。
+> DevKinsta の Push to Staging は DB ごと上書きするため使用禁止。
+
+```bash
+# ショートハンド変数（参考）
+# LOCAL=~/DevKinsta/public/famurai/wp-content
+# REMOTE=famurai@140.83.62.102:/www/famurai_375/public/wp-content
+# PORT=61241
+
+# 単一ファイル転送
+scp -P 61241 ~/DevKinsta/public/famurai/wp-content/themes/famurai-child/functions.php \
+  famurai@140.83.62.102:/www/famurai_375/public/wp-content/themes/famurai-child/
+
+# style.css
+scp -P 61241 ~/DevKinsta/public/famurai/wp-content/themes/famurai-child/style.css \
+  famurai@140.83.62.102:/www/famurai_375/public/wp-content/themes/famurai-child/
+
+# theme.json
+scp -P 61241 ~/DevKinsta/public/famurai/wp-content/themes/famurai-child/theme.json \
+  famurai@140.83.62.102:/www/famurai_375/public/wp-content/themes/famurai-child/
+
+# ディレクトリごと転送（例：カスタムプラグイン）
+scp -P 61241 -r ~/DevKinsta/public/famurai/wp-content/plugins/famurai-brand-settings \
+  famurai@140.83.62.102:/www/famurai_375/public/wp-content/plugins/
+
+# mu-plugins
+scp -P 61241 -r ~/DevKinsta/public/famurai/wp-content/mu-plugins/ \
+  famurai@140.83.62.102:/www/famurai_375/public/wp-content/mu-plugins/
+```
+
+---
+
+## ファイル編集パス
+
+```
+~/DevKinsta/public/famurai/wp-content/
+├── themes/
+│   ├── greenshift/           （親テーマ・直接編集禁止）
+│   └── famurai-child/        （カスタマイズはここに）
+│       ├── style.css
+│       ├── functions.php
+│       ├── theme.json
+│       ├── templates/
+│       └── parts/
+├── plugins/
+│   └── famurai-*/            （カスタムプラグイン）
+└── mu-plugins/               （必須プラグイン）
 ```
 
 ---
 
 ## テーマ構成
 
-### 親テーマ: Twenty Twenty-Five（TT5）
+### 親テーマ: Greenshift
 
-- WordPress公式 FSEテーマ
-- **直接編集禁止**（テーマ更新で上書きされる）
+- FSE テーマ
+- **直接編集禁止**
 
-### 子テーマ: famurai-child ← すべてのカスタマイズはここに
+### 子テーマ: famurai-child
 
-```
-wordpress/wp-content/themes/famurai-child/
-├── style.css      （テーマ宣言: Template: twentytwentyfive）
-├── functions.php  （親スタイル読み込み）
-├── theme.json     （Famurai デザイントークン）
-├── templates/     （FSE ページテンプレート）
-└── parts/         （再利用パーツ）
-```
-
-#### Git 管理対象
-
-```
-wordpress/wp-content/themes/famurai-child/  ← ここだけ管理
-wordpress/wp-content/plugins/famurai-*/     ← カスタムプラグイン
-```
+- `Template: greenshift` で宣言
+- 開発中は**Greenshift（親）をアクティブ**のまま使用
+  - FSE テンプレートが greenshift スラッグに紐付いているため
 
 ---
 
@@ -113,32 +179,9 @@ wordpress/wp-content/plugins/famurai-*/     ← カスタムプラグイン
 
 ## ホスティング（本番）
 
-**Kinsta**（現在利用中）
+**Kinsta**
+- DevKinsta → 「同期」→「Staging にプッシュ」で反映
 - 東京・大阪リージョン確定
-- WooCommerceキャッシュバイパス自動設定
-- Cloudflare Enterprise WAF・CDN内蔵
-- 自動バックアップ14日分内蔵
-
----
-
-## よく使うコマンド
-
-```bash
-# キャッシュクリア
-docker-compose run --rm --entrypoint=wp wpcli cache flush
-
-# テーマ確認
-docker-compose run --rm --entrypoint=wp wpcli theme list --status=active
-
-# プラグイン確認
-docker-compose run --rm --entrypoint=wp wpcli plugin list --status=active
-
-# パーマリンク再生成
-docker-compose run --rm --entrypoint=wp wpcli rewrite flush
-
-# WordPress コンテナに入る
-docker exec -it famurai_wp bash
-```
 
 ---
 
